@@ -30,7 +30,7 @@ def scrape_poems( url):
         poem_links = poem_links = poem_list.find_all('a', rel='nofollow')
         
         # Create/open a text file to store the poems
-        with open('combine_poems.txt', 'w', encoding='utf-8') as file:
+        with open('combine_poems1.txt', 'w', encoding='utf-8') as file:
             
             # Iterate through each poem link
             for i, link in enumerate(poem_links, 1):
@@ -73,8 +73,9 @@ def scrape_poems( url):
         print(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    urls=["https://mypoeticside.com/poets/charles-bukowski-poems","https://mypoeticside.com/poets/william-shakespeare-poems",
-          "https://mypoeticside.com/poets/sylvia-plath-poems","https://mypoeticside.com/poets/john-milton-poems","https://mypoeticside.com/poets/t-s-eliot-poems","https://mypoeticside.com/poets/emily-dickinson-poems"
-          ,"https://mypoeticside.com/poets/john-donne-poems","https://mypoeticside.com/poets/alfred-lord-tennyson-poems"]
+    # urls=["https://mypoeticside.com/poets/charles-bukowski-poems","https://mypoeticside.com/poets/william-shakespeare-poems",
+        #   "https://mypoeticside.com/poets/sylvia-plath-poems","https://mypoeticside.com/poets/john-milton-poems","https://mypoeticside.com/poets/t-s-eliot-poems","https://mypoeticside.com/poets/emily-dickinson-poems"
+        #   ,"https://mypoeticside.com/poets/john-donne-poems","https://mypoeticside.com/poets/alfred-lord-tennyson-poems","https://mypoeticside.com/poets/rabindranath-tagore-poems","https://mypoeticside.com/poets/rudyard-kipling-poems"]
+    urls=["https://mypoeticside.com/poets/rudyard-kipling-poems"]
     for url in urls:  
         scrape_poems(url)
