@@ -8,10 +8,11 @@ batch_size = 32
 block_size = 128
 max_iters = 5000
 eval_interval = 500
-learning_rate = 1e-3
+learning_rate = 3e-4
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 eval_iter=200
 n_embed=32
+dropout=0.2
 
 torch.manual_seed(1337)
 
@@ -51,7 +52,12 @@ class Bigram(nn.Module):
         super().__init__() ## call the parent class constructor
         self.token_embedding_table=nn.Embedding(vocab_size,n_embed)
         self.position_embedding_table=nn.Embedding(block_size,n_embed)
-        self.sa_head=Head(n_embed)
+        self.blocks=nn.Sequential(
+            Block(n_embed,n_head=4),
+            Block(n_embed,n_head=4),
+            Block(n_embed,n_head=4))  # 4 heads
+        # self.ffwd=FeedForward(n_embed)
+        self.ln_f = nn.LayerNorm(n_embed)
         self.lm_head=nn.Linear(n_embed,vocab_size)  
         
         
@@ -60,7 +66,7 @@ class Bigram(nn.Module):
         tok_embed=self.token_embedding_table(idx) # B T C
         pos_embed=self.position_embedding_table(torch.arange(T,device=idx.device)) # T C
         x=tok_embed+pos_embed # B T C
-        x=self.sa_head(x)
+        x=self.blocks(x)
         logits=self.lm_head(x) # B T Vocab_size
         # print("logits", logits)
         
@@ -113,7 +119,35 @@ class Head(nn.Module):
         
         y=wei@v # (B,T,T) @ (B,T,C) = (B,T,C)
         return y
+    
+    
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
 
+    def __init__(self, num_heads, head_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(n_embed, n_embed)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.proj(out)
+        return out
+    
+class Block(nn.Module):
+    def __init__(self,n_embed,n_head):
+        super().__init__()
+        head_size=n_embed//n_head
+        self.sa=MultiHeadAttention(n_head,n_embed//n_head)
+        self.ffwd=FeedForward(n_embed)
+        self.ln1 = nn.LayerNorm(n_embed)
+        self.ln2 = nn.LayerNorm(n_embed)
+
+    def forward(self,x):
+        x=x+self.sa(x)
+        x=x+self.ffwd(x)
+        return x
     
 @torch.no_grad()
 def estimate_loss():
@@ -133,9 +167,12 @@ def estimate_loss():
 class FeedForward(nn.Module):
     def __init__(self,n_embed):
         super().__init__()
-        self.net=nn.Sequential(nn.Linear(n_embed,n_embed),nn.ReLU())
-        
-        
+        self.net=nn.Sequential(
+            nn.Linear(n_embed,4*n_embed),
+            nn.ReLU(),
+            nn.Linear(4*n_embed,n_embed)
+        )
+            
     def forward(self,x):
         return self.net(x)
 
@@ -157,5 +194,7 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
     
+## save the model
+torch.save(model.state_dict(),'model.pth')
 context=torch.zeros(1,1,dtype=torch.long)
 print(decode(model.generate(context,1000)[0].tolist()))
