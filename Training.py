@@ -6,11 +6,12 @@ import re
 
 batch_size = 32
 block_size = 128
-max_iters = 3000
-eval_interval = 300
-learning_rate = 1e-2
+max_iters = 5000
+eval_interval = 500
+learning_rate = 1e-3
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 eval_iter=200
+n_embed=32
 
 torch.manual_seed(1337)
 
@@ -48,10 +49,19 @@ def get_batch(split):
 class Bigram(nn.Module):
     def __init__(self,vocab_size):
         super().__init__() ## call the parent class constructor
-        self.token_embedding_table=nn.Embedding(vocab_size,vocab_size)
+        self.token_embedding_table=nn.Embedding(vocab_size,n_embed)
+        self.position_embedding_table=nn.Embedding(block_size,n_embed)
+        self.sa_head=Head(n_embed)
+        self.lm_head=nn.Linear(n_embed,vocab_size)  
+        
         
     def forward(self, idx,targets=None):
-        logits=self.token_embedding_table(idx) # B T C
+        B,T=idx.shape
+        tok_embed=self.token_embedding_table(idx) # B T C
+        pos_embed=self.position_embedding_table(torch.arange(T,device=idx.device)) # T C
+        x=tok_embed+pos_embed # B T C
+        x=self.sa_head(x)
+        logits=self.lm_head(x) # B T Vocab_size
         # print("logits", logits)
         
         if targets is None:
@@ -73,6 +83,7 @@ class Bigram(nn.Module):
 
     def generate(self,idx,max_new_token):
         for _ in range(max_new_token):
+            idx=idx[:,-block_size:]
             logits,loss=self(idx)
             logits=logits[:,-1,:] #only getting the (B,C)
             probs=F.softmax(logits,dim=-1) # B,C
@@ -81,6 +92,28 @@ class Bigram(nn.Module):
             idx=torch.cat([idx,idx_next],dim=1)
             
         return idx
+    
+class Head(nn.Module):
+    def __init__(self,head_size):
+        super().__init__()
+        self.key=nn.Linear(n_embed,head_size,bias=False)
+        self.query=nn.Linear(n_embed,head_size,bias=False)
+        self.value=nn.Linear(n_embed,head_size,bias=False)
+        self.register_buffer('tril',torch.tril(torch.ones(block_size,block_size))) # registering trill as it was not a parameter
+        
+    def forward(self,x):
+        B,T,C=x.shape
+        k=self.key(x)
+        q=self.query(x)
+        v=self.value(x)
+        
+        wei=q@k.transpose(-2,-1)/C**0.5 # (B,T,C) @ (B,C,T) = (B,T,T)
+        wei=wei.masked_fill(self.tril[:T,:T]==0,float('-inf'))
+        wei=F.softmax(wei,dim=-1)
+        
+        y=wei@v # (B,T,T) @ (B,T,C) = (B,T,C)
+        return y
+
     
 @torch.no_grad()
 def estimate_loss():
@@ -96,6 +129,18 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
+
+class FeedForward(nn.Module):
+    def __init__(self,n_embed):
+        super().__init__()
+        self.net=nn.Sequential(nn.Linear(n_embed,n_embed),nn.ReLU())
+        
+        
+    def forward(self,x):
+        return self.net(x)
+
+
+
 model = Bigram(vocab_size)
 
 optimizer=optim.Adam(model.parameters(),lr=learning_rate)
