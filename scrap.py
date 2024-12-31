@@ -8,7 +8,7 @@ from datetime import datetime
 import os
 
 # Define a constant for the output file
-POEMS_FILE = 'all_poems_collection_more.txt'
+POEMS_FILE = 'all_poems_collection_someMore.txt'
 
 def scrape_poems(url, author_name, total_poems_scraped):
     headers = {
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     start_time = datetime.now()
     poets_list = []
     total_poems_scraped = 0
-    char = [i for i in string.ascii_lowercase if i>'k']
+    char = [i for i in string.ascii_lowercase if i>='v']
 
     print("Starting the scraping process...")
     
