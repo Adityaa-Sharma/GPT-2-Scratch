@@ -16,7 +16,7 @@ dropout=0.2
 
 torch.manual_seed(1337)
 
-with open('combine_poems.txt','r',encoding='utf-8') as f:
+with open('Poems.txt','r',encoding='utf-8') as f:
     text = f.read()
 #removing numbers
 text = re.sub(r'\d+', '', text)
@@ -45,6 +45,7 @@ def get_batch(split):
 
     x=torch.stack([data[i:i+block_size] for i in ix])
     y=torch.stack([data[i+1:i+block_size+1] for i in ix])
+    x,y=x.to(device),y.to(device)
     return x,y
 
 class Bigram(nn.Module):
@@ -178,7 +179,9 @@ class FeedForward(nn.Module):
 
 
 
-model = Bigram(vocab_size)
+model = Bigram(vocab_size).to(device)
+
+print(sum(p.numel() for p in model.parameters())/1e6, 'M parameters')
 
 optimizer=optim.Adam(model.parameters(),lr=learning_rate)
 
@@ -196,5 +199,5 @@ for iter in range(max_iters):
     
 ## save the model
 torch.save(model.state_dict(),'model.pth')
-context=torch.zeros(1,1,dtype=torch.long)
+context=torch.zeros(1,1,dtype=torch.long,device=device)
 print(decode(model.generate(context,1000)[0].tolist()))
