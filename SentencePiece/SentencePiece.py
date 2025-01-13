@@ -18,12 +18,12 @@ dropout = 0.2
 torch.manual_seed(1337)
 
 # Train a SentencePiece model on the input text
-text_file = "combine_poems.txt"
+text_file = "Poems.txt"
 sp_model_prefix = "sentencepiece_model"
 
 # Train SentencePiece (only needs to be done once)
 spm.SentencePieceTrainer.train(
-    input=text_file, model_prefix=sp_model_prefix, vocab_size=8000, model_type='bpe'
+    input=text_file, model_prefix=sp_model_prefix, vocab_size=15000, model_type='bpe'
 )
 
 # Load the trained SentencePiece model
@@ -159,6 +159,7 @@ def estimate_loss():
         losses = torch.zeros(eval_iter, device=device)
         for k in range(eval_iter):
             x, y = get_batch(split)
+            x,y=x.to(device),y.to(device)
             logits, loss = model(x, y)
             losses[k] = loss.item()
         out[split] = losses.mean()
@@ -168,6 +169,7 @@ def estimate_loss():
 # Initialize the model and optimizer
 vocab_size = sp.get_piece_size()
 model = Bigram(vocab_size).to(device)
+print(sum(p.numel() for p in model.parameters())/1e6, 'M parameters')
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training loop
@@ -185,6 +187,6 @@ for iter in range(max_iters):
 # Text generation
 sentence = "I love the way"
 encoded_sentence = torch.tensor([sp.encode(sentence, out_type=int)], dtype=torch.long, device=device)
-output = model.generate(encoded_sentence, max_new_tokens=100)
+output = model.generate(encoded_sentence, max_new_tokens=1000)
 decoded_output = sp.decode(output[0].tolist())
 print(decoded_output)

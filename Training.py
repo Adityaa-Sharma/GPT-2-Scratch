@@ -3,20 +3,13 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import re
+from Configs.configs import ModelConfig
 
-batch_size = 32
-block_size = 128
-max_iters = 5000
-eval_interval = 500
-learning_rate = 3e-4
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-eval_iter=200
-n_embed=32
-dropout=0.2
 
+device = ModelConfig.device
 torch.manual_seed(1337)
 
-with open('combine_poems.txt','r',encoding='utf-8') as f:
+with open('Poems.txt','r',encoding='utf-8') as f:
     text = f.read()
 #removing numbers
 text = re.sub(r'\d+', '', text)
@@ -40,25 +33,26 @@ val_data=data[n:]
 
 def get_batch(split):
     data=train_data if split== 'train' else val_data
-    ix=torch.randint(0,len(data)-block_size,(batch_size,))
+    ix=torch.randint(0,len(data)-ModelConfig.block_size,(ModelConfig.batch_size,))
     # print("printing ix: ", ix)
 
-    x=torch.stack([data[i:i+block_size] for i in ix])
-    y=torch.stack([data[i+1:i+block_size+1] for i in ix])
+    x=torch.stack([data[i:i+ModelConfig.block_size] for i in ix])
+    y=torch.stack([data[i+1:i+ModelConfig.block_size+1] for i in ix])
+    x,y=x.to(ModelConfig.device),y.to(ModelConfig.device)
     return x,y
 
 class Bigram(nn.Module):
     def __init__(self,vocab_size):
         super().__init__() ## call the parent class constructor
-        self.token_embedding_table=nn.Embedding(vocab_size,n_embed)
-        self.position_embedding_table=nn.Embedding(block_size,n_embed)
+        self.token_embedding_table=nn.Embedding(vocab_size,ModelConfig.n_embed)
+        self.position_embedding_table=nn.Embedding(ModelConfig.block_size,ModelConfig.n_embed)
         self.blocks=nn.Sequential(
-            Block(n_embed,n_head=4),
-            Block(n_embed,n_head=4),
-            Block(n_embed,n_head=4))  # 4 heads
+            Block(ModelConfig.n_embed,n_head=4),
+            Block(ModelConfig.n_embed,n_head=4),
+            Block(ModelConfig.n_embed,n_head=4))  # 4 heads
         # self.ffwd=FeedForward(n_embed)
-        self.ln_f = nn.LayerNorm(n_embed)
-        self.lm_head=nn.Linear(n_embed,vocab_size)  
+        self.ln_f = nn.LayerNorm(ModelConfig.n_embed)
+        self.lm_head=nn.Linear(ModelConfig.n_embed,vocab_size)  
         
         
     def forward(self, idx,targets=None):
@@ -89,7 +83,7 @@ class Bigram(nn.Module):
 
     def generate(self,idx,max_new_token):
         for _ in range(max_new_token):
-            idx=idx[:,-block_size:]
+            idx=idx[:,-ModelConfig.block_size:]
             logits,loss=self(idx)
             logits=logits[:,-1,:] #only getting the (B,C)
             probs=F.softmax(logits,dim=-1) # B,C
@@ -102,10 +96,10 @@ class Bigram(nn.Module):
 class Head(nn.Module):
     def __init__(self,head_size):
         super().__init__()
-        self.key=nn.Linear(n_embed,head_size,bias=False)
-        self.query=nn.Linear(n_embed,head_size,bias=False)
-        self.value=nn.Linear(n_embed,head_size,bias=False)
-        self.register_buffer('tril',torch.tril(torch.ones(block_size,block_size))) # registering trill as it was not a parameter
+        self.key=nn.Linear(ModelConfig.n_embed,head_size,bias=False)
+        self.query=nn.Linear(ModelConfig.n_embed,head_size,bias=False)
+        self.value=nn.Linear(ModelConfig.n_embed,head_size,bias=False)
+        self.register_buffer('tril',torch.tril(torch.ones(ModelConfig.block_size,ModelConfig.block_size))) # registering trill as it was not a parameter
         
     def forward(self,x):
         B,T,C=x.shape
@@ -127,8 +121,8 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
-        self.proj = nn.Linear(n_embed, n_embed)
-        self.dropout = nn.Dropout(dropout)
+        self.proj = nn.Linear(ModelConfig.n_embed, ModelConfig.n_embed)
+        self.dropout = nn.Dropout(ModelConfig.dropout)
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
@@ -154,8 +148,8 @@ def estimate_loss():
     out = {}
     model.eval()
     for split in ['train', 'val']:
-        losses = torch.zeros(eval_iter, device=device)  # Move tensor to correct device
-        for k in range(eval_iter):
+        losses = torch.zeros(ModelConfig.eval_iter, device=device)  # Move tensor to correct device
+        for k in range(ModelConfig.eval_iter):
             x, y = get_batch(split)
             x, y = x.to(device), y.to(device)  # Uncomment and use device
             logits, loss = model(x, y)
@@ -178,12 +172,14 @@ class FeedForward(nn.Module):
 
 
 
-model = Bigram(vocab_size)
+model = Bigram(vocab_size).to(device)
 
-optimizer=optim.Adam(model.parameters(),lr=learning_rate)
+print(sum(p.numel() for p in model.parameters())/1e6, 'M parameters')
 
-for iter in range(max_iters):
-    if iter%eval_interval==0:
+optimizer=optim.Adam(model.parameters(),lr=ModelConfig.learning_rate)
+
+for iter in range(ModelConfig.max_iters):
+    if iter%ModelConfig.eval_interval==0:
         losses=estimate_loss()
         print(f'Iter {iter}, Train loss: {losses["train"]:.4f}, Val loss: {losses["val"]:.4f}')
     
@@ -196,5 +192,5 @@ for iter in range(max_iters):
     
 ## save the model
 torch.save(model.state_dict(),'model.pth')
-context=torch.zeros(1,1,dtype=torch.long)
+context=torch.zeros(1,1,dtype=torch.long,device=device)
 print(decode(model.generate(context,1000)[0].tolist()))
