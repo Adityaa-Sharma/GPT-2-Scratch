@@ -1,5 +1,5 @@
 import re
-
+import tiktoken
 #character tokenizer
 class CharacterTokenization:
     def __init__(self, vocab: list):
@@ -30,3 +30,17 @@ class WordTokenization:
         decode=lambda tokens: ' '.join([self.idx_to_word[i] for i in tokens])
         return decode(tokens)
 
+
+class GptTokenizer:
+    def __init__(self):
+        self.tokenizer=tiktoken.get_encoding('gpt2')
+        
+    def encode(self, s: str) -> list:
+        return self.tokenizer.encode(s)
+    
+    def decode(self, tokens: list) -> str:
+        return self.tokenizer.decode(tokens)
+    
+
+        
+    
