@@ -7,4 +7,5 @@ __author__ = 'Aditya Sharma'
 __all__ = [
     'CharacterTokenization',
     'WordTokenization',
+    'GptTokenizer'
 ]
