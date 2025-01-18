@@ -32,7 +32,7 @@ class Trainer:
         for split in ['train', 'val']:
             losses = torch.zeros(ModelConfig.eval_iter, device=device)
             for k in range(ModelConfig.eval_iter):
-                x, y = BatchGenerator.get_batch(split)
+                x, y = BatchGenerator(self.train_data,self.val_data).get_batch(split)
                 x, y = x.to(device), y.to(device)
                 logits, loss = self.model(x, y)
                 losses[k] = loss.item()
@@ -44,6 +44,7 @@ class Trainer:
         iters_per_epoch = ModelConfig.max_iters // ModelConfig.n_epochs
         for iter in range(iters_per_epoch):
             if iter % ModelConfig.eval_interval == 0:
+                print(f'Epoch {epoch}, Iter {iter}')
                 losses = self.estimate_loss()
                 print(f'Epoch {epoch}, Iter {iter}, Train loss: {losses["train"]:.4f}, Val loss: {losses["val"]:.4f}')
                 self.train_losses.append(losses["train"])
@@ -75,8 +76,11 @@ def main():
     vocab_size = len(tokenizer.char_to_idx)
     
     # Split data
-    splitter = DataSplitter(text, CharacterTokenization, 0.9)
+    splitter = DataSplitter(text, tokenizer, 0.9)
     train_data, val_data = splitter.split(0.9)
+    
+    #batch generator
+    Batch=BatchGenerator(train_data,val_data)
     
     # Initialize model and optimizer
     model = GptModel(vocab_size).to(device)

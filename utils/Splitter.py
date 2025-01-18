@@ -3,7 +3,7 @@ import torch
 class DataSplitter:
     def __init__(self, data, tokenizer, ratio):
         self.data = data
-        self.tokenizer = tokenizer()
+        self.tokenizer = tokenizer
         self.ratio = ratio
         
 
