@@ -1,7 +1,7 @@
 import torch
 from Configs.configs import ModelConfig
 
-class DataLoader:
+class BatchGenerator:
     def __init__(self, train_data, val_data):
         self.train_data = train_data
         self.val_data = val_data

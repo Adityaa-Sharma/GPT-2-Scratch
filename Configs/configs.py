@@ -10,13 +10,13 @@ class ModelConfig:
     max_iters: int = 5000
     eval_interval: int = 500
     eval_iter: int = 200
-    learning_rate: float = 3e-4
+    learning_rate: float = 6e-4 # gpt paper
     
     # Model architecture
-    n_embed: int = 384
-    n_layer: int = 6
-    n_head: int = 6
-    dropout: float = 0.2
+    n_embed: int = 768
+    n_layer: int = 12 # gpt-2 124M model
+    n_head: int = 12 # gpt-2 124M model
+    dropout: float = 0.1
     
     # System
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
