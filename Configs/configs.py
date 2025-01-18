@@ -11,6 +11,7 @@ class ModelConfig:
     eval_interval: int = 500
     eval_iter: int = 200
     learning_rate: float = 6e-4 # gpt paper
+    n_epochs: int = 5
     
     # Model architecture
     n_embed: int = 768
