@@ -1,14 +1,14 @@
-Character Tokenizer model parameters: 21.765322M parameters
+Word Tokenized model parameters: 247.212482M parameters
 
 Configuration: 
 <class 'Configs.configs.ModelConfig'>
 
-Tokenizer: Character Tokenization
+Tokenizer: Word Tokenization
 
-Vocab Size: 202
+Vocab Size: 146882
 
 Model Architecture: GptModel(
-  (token_embedding_table): Embedding(202, 768)
+  (token_embedding_table): Embedding(146882, 768)
   (position_embedding_table): Embedding(256, 768)
   (blocks): Sequential(
     (0): Block(
@@ -79,7 +79,7 @@ Model Architecture: GptModel(
     )
   )
   (ln_f): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
-  (lm_head): Linear(in_features=768, out_features=202, bias=True)
+  (lm_head): Linear(in_features=768, out_features=146882, bias=True)
 )
 
 Learning Rate: 0.0006
@@ -96,7 +96,7 @@ Eval Iter: 200
 
 N Epochs: 5
 
-Device: cuda
+Device: cpu
 
 Dropout: 0.1
 
