@@ -9,6 +9,7 @@ from Tokenization.tokenization import GptTokenizer, CharacterTokenization, WordT
 from utils.get_batch import BatchGenerator
 from utils.Splitter import DataSplitter
 import matplotlib.pyplot as plt
+import numpy as np
 
 GptTokenizer = GptTokenizer()
 
@@ -47,8 +48,8 @@ class Trainer:
                 print(f'Epoch {epoch}, Iter {iter}')
                 losses = self.estimate_loss()
                 print(f'Epoch {epoch}, Iter {iter}, Train loss: {losses["train"]:.4f}, Val loss: {losses["val"]:.4f}')
-                self.train_losses.append(losses["train"])
-                self.val_losses.append(losses["val"])
+                self.train_losses.append(float(losses["train"]))
+                self.val_losses.append(float(losses["val"]))
             
             xb, yb = BatchGenerator.get_batch('train')
             logits, loss = self.model(xb, yb)
@@ -58,8 +59,11 @@ class Trainer:
     
     def plot_losses(self):
         plt.figure(figsize=(10, 6))
-        plt.plot(self.train_losses, label='Training Loss')
-        plt.plot(self.val_losses, label='Validation Loss')
+        train_losses = np.array(self.train_losses)
+        val_losses = np.array(self.val_losses)
+        
+        plt.plot(train_losses, label='Training Loss')
+        plt.plot(val_losses, label='Validation Loss')
         plt.xlabel('Evaluation Steps')
         plt.ylabel('Loss')
         plt.title('Training and Validation Losses')

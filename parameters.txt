@@ -1,1 +1,107 @@
-21.765322M parameters
+Character Tokenizer model parameters: 21.765322M parameters
+
+Configuration: 
+<class 'Configs.configs.ModelConfig'>
+
+Tokenizer: Character Tokenization
+
+Vocab Size: 202
+
+Model Architecture: GptModel(
+  (token_embedding_table): Embedding(202, 768)
+  (position_embedding_table): Embedding(256, 768)
+  (blocks): Sequential(
+    (0): Block(
+      (sa): MultiHeadAttention(
+        (heads): ModuleList(
+          (0-3): 4 x Head(
+            (key): Linear(in_features=768, out_features=192, bias=False)
+            (query): Linear(in_features=768, out_features=192, bias=False)
+            (value): Linear(in_features=768, out_features=192, bias=False)
+          )
+        )
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (dropout): Dropout(p=0.1, inplace=False)
+      )
+      (ffwd): FeedForward(
+        (net): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='none')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+      )
+      (ln1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+      (ln2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+    )
+    (1): Block(
+      (sa): MultiHeadAttention(
+        (heads): ModuleList(
+          (0-3): 4 x Head(
+            (key): Linear(in_features=768, out_features=192, bias=False)
+            (query): Linear(in_features=768, out_features=192, bias=False)
+            (value): Linear(in_features=768, out_features=192, bias=False)
+          )
+        )
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (dropout): Dropout(p=0.1, inplace=False)
+      )
+      (ffwd): FeedForward(
+        (net): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='none')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+      )
+      (ln1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+      (ln2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+    )
+    (2): Block(
+      (sa): MultiHeadAttention(
+        (heads): ModuleList(
+          (0-3): 4 x Head(
+            (key): Linear(in_features=768, out_features=192, bias=False)
+            (query): Linear(in_features=768, out_features=192, bias=False)
+            (value): Linear(in_features=768, out_features=192, bias=False)
+          )
+        )
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (dropout): Dropout(p=0.1, inplace=False)
+      )
+      (ffwd): FeedForward(
+        (net): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='none')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+      )
+      (ln1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+      (ln2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+    )
+  )
+  (ln_f): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+  (lm_head): Linear(in_features=768, out_features=202, bias=True)
+)
+
+Learning Rate: 0.0006
+
+Batch Size: 64
+
+Block Size: 256
+
+Max Iters: 5000
+
+Eval Interval: 500
+
+Eval Iter: 200
+
+N Epochs: 5
+
+Device: cuda
+
+Dropout: 0.1
+
+N Head: 12
+
+N Layer: 12
+
+N Embed: 768
