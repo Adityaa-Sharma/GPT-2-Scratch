@@ -7,11 +7,11 @@ class CharacterTokenization:
         self.idx_to_char = {idx: char for idx, char in enumerate(vocab)}
     
 
-    def tokenize(self, s: str) -> list:
+    def encode(self, s: str) -> list:
         encode=lambda s:[self.char_to_idx[char] for char in s]
         return encode(s)
 
-    def detokenize(self, x: list) -> str:
+    def decode(self, x: list) -> str:
         decode=lambda x:''.join([self.idx_to_char[i] for i in x])
         return decode(x)
     
