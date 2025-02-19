@@ -1,28 +1,22 @@
-from datatrove.executor import LocalPipelineExecutor
-from datatrove.pipeline.readers import ParquetReader
-from datatrove.pipeline.filters import LambdaFilter
-from datatrove.pipeline.writers import JsonlWriter
-import json
+from datasets import load_dataset
+import pandas as pd
 
-pipeline_exec = LocalPipelineExecutor(
-    pipeline=[
-        # replace "data/CC-MAIN-2024-10" with "sample/100BT" to use the 100BT sample
-        ParquetReader("hf://datasets/HuggingFaceFW/fineweb/data/CC-MAIN-2024-10", limit=1000),
-        LambdaFilter(lambda doc: "hugging" in doc.text),
-        JsonlWriter("fineweb-dataset")
-    ],
-    tasks=10
-)
-pipeline_exec.run()
+# Load the dataset in streaming mode
+dataset = load_dataset("HuggingFaceFW/fineweb", 
+                      name="sample-10BT", 
+                      split="train", 
+                      streaming=True)
 
+# Process in batches and write simultaneously
+chunk_size = 10000
 
-
-input_file = "fineweb-dataset.jsonl"
-output_file = "fineweb-dataset.txt"
-
-with open(input_file, "r") as jsonl, open(output_file, "w", encoding="utf-8") as txt:
-    for line in jsonl:
-        doc = json.loads(line)
-        txt.write(doc["text"] + "\n\n")  # Separate documents with a newline
-
-print("Conversion completed! Dataset saved as fineweb-dataset.txt")
+# Open file in append mode
+with open('train.txt', 'w') as f:  # 'w' to create new file initially
+    for i, batch in enumerate(dataset.iter(batch_size=chunk_size)):
+        # Convert batch to DataFrame and save immediately
+        df = pd.DataFrame(batch['text'])
+        # Append to file without index and header
+        df.to_csv(f, mode='a', index=False, header=False, sep='\t')
+        
+        if i % 10 == 0:
+            print(f"Processed {(i+1)*chunk_size} examples")
