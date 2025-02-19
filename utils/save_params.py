@@ -1,5 +1,5 @@
 import datetime
-from config import ModelConfig
+from Configs.configs import ModelConfig
 
 
 def save_model_parameters(model, vocab_size, tokenization_type="Character"):
