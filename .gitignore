@@ -1,6 +1,22 @@
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Model and weights files
+*.model
+*.vocab
+tokenizer_model*
+*.pt
+*.pth
+*.bin
+*.ckpt
+/weights/
+/models/
+
+# Training data
+train.txt
+
 *.so
 .env
 .venv
