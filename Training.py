@@ -72,6 +72,9 @@ class Trainer:
         plt.close()
 
 def main():
+    
+    
+    
     # Load and preprocess data
     with open('dataset/Poems.txt', 'r', encoding='utf-8') as f:
         text = f.read()

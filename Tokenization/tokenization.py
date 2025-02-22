@@ -1,5 +1,8 @@
 import re
 import tiktoken
+import sentencepiece as spm
+import os
+
 
 class CharacterTokenization:
     def __init__(self, vocab: list):
@@ -39,3 +42,38 @@ class GptTokenizer:
     
     def decode(self, tokens: list) -> str:
         return self.tokenizer.decode(tokens)
+    
+    
+
+class SentencePieceTokenizer:
+    def __init__(self, vocab_size=32000):
+        self._vocab_size = vocab_size
+        self.sp_model = spm.SentencePieceProcessor()
+
+    @property
+    def vocab_size(self):
+        return self._vocab_size
+
+    def train(self, input_file):
+        # Create a temporary file for model prefix
+        model_prefix = "tokenizer_model"
+        
+        # Train the tokenizer
+        spm.SentencePieceTrainer.train(
+            input=input_file,
+            model_prefix=model_prefix,
+            vocab_size=self._vocab_size,
+            model_type='bpe',
+            character_coverage=1.0,
+            max_sentence_length=2048
+        )
+        
+        # Load the trained model
+        self.sp_model.load(f"{model_prefix}.model")
+        return self
+
+    def encode(self, text):
+        return self.sp_model.encode_as_ids(text)
+
+    def decode(self, tokens):
+        return self.sp_model.decode_ids(tokens)
