@@ -1,26 +1,20 @@
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
+# Model weights and checkpoints
+/weights/
+*.pth
+*.pt
+*.bin
+*.ckpt
 
-# Model and weights files
+# Model files
 *.model
 *.vocab
 tokenizer_model*
-*.pt
-*.pth
-*.bin
-*.ckpt
-/weights/
-/models/
 
 # Training data
 train.txt
+dataset/*.txt
 
-*.so
-.env
-.venv
-env/
-venv/
-ENV/
-.DS_Store
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
