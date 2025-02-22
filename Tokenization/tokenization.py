@@ -49,6 +49,8 @@ class SentencePieceTokenizer:
     def __init__(self, vocab_size=32000):
         self._vocab_size = vocab_size
         self.sp_model = spm.SentencePieceProcessor()
+        self.models_dir = os.path.join(os.path.dirname(__file__), 'models')
+        os.makedirs(self.models_dir, exist_ok=True)
 
     @property
     def vocab_size(self):
