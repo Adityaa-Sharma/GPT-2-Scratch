@@ -5,19 +5,36 @@ import torch.nn.functional as F
 from Model.Block import Block
 
 class GptModel(nn.Module):
-    def __init__(self,vocab_size):
-        super().__init__() ## call the parent class constructor
-        self.token_embedding_table=nn.Embedding(vocab_size,ModelConfig.n_embed)
-        self.position_embedding_table=nn.Embedding(ModelConfig.block_size,ModelConfig.n_embed)
-        self.blocks=nn.Sequential(
-            Block(ModelConfig.n_embed,n_head=4),
-            Block(ModelConfig.n_embed,n_head=4),
-            Block(ModelConfig.n_embed,n_head=4))  # 4 heads
-        # self.ffwd=FeedForward(n_embed)
+    def __init__(self, vocab_size):
+        super().__init__()
+        # Reduce model size for better initial training
+        self.token_embedding_table = nn.Embedding(vocab_size, ModelConfig.n_embed)
+        self.position_embedding_table = nn.Embedding(ModelConfig.block_size, ModelConfig.n_embed)
+        
+        # Add layer normalization after embeddings
+        self.emb_norm = nn.LayerNorm(ModelConfig.n_embed)
+        
+        # Reduce number of transformer blocks initially
+        self.blocks = nn.Sequential(
+            Block(ModelConfig.n_embed, ModelConfig.n_head),
+            Block(ModelConfig.n_embed, ModelConfig.n_head),
+            Block(ModelConfig.n_embed, ModelConfig.n_head)
+        )
+        
         self.ln_f = nn.LayerNorm(ModelConfig.n_embed)
-        self.lm_head=nn.Linear(ModelConfig.n_embed,vocab_size)  
+        self.lm_head = nn.Linear(ModelConfig.n_embed, vocab_size)
         
-        
+        # Initialize weights properly
+        self.apply(self._init_weights)
+    
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            
     def forward(self, idx,targets=None):
         B,T=idx.shape
         tok_embed=self.token_embedding_table(idx) # B T C
