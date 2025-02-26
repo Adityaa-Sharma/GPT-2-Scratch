@@ -5,7 +5,7 @@ import torch
 class ModelConfig:
     # Training parameters
     batch_size: int = 8 
-    block_size: int = 256 
+    block_size: int = 512 
     max_iters: int = 480000
     eval_interval: int = 5000  
     eval_iter: int = 50
@@ -17,6 +17,7 @@ class ModelConfig:
     n_layer: int = 6   
     n_head: int = 6    
     dropout: float = 0.1
+    k:int =128
     
     # Learning rate schedule
     warmup_steps: int = 2000

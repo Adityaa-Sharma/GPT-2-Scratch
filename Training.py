@@ -10,9 +10,9 @@ from TextFormatter.formatter import WordFormatter,CharacterFormatter
 from Tokenization.tokenization import GptTokenizer, CharacterTokenization, WordTokenization
 from utils.get_batch import BatchGenerator
 from utils.Splitter import DataSplitter
+from utils.save_params import save_model_parameters
 import matplotlib.pyplot as plt
-
-GptTokenizer = GptTokenizer()
+from utils.visualizer import Visualizer
 
 device = ModelConfig.device
 torch.manual_seed(1337)
@@ -22,10 +22,18 @@ class Trainer:
         self.model = model
         self.optimizer = optimizer
         self.tokenizer = tokenizer
-        self.train_data = train_data
-        self.val_data = val_data
+        self.train_data = train_data.long()
+        self.val_data = val_data.long()
         self.train_losses = []
         self.val_losses = []
+        # Add learning rate scheduler
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, 
+            T_max=ModelConfig.max_iters,
+            eta_min=1e-5
+        )
+        self.epoch_train_losses = []
+        self.epoch_val_losses = []
         
     @torch.no_grad()
     def estimate_loss(self):
@@ -35,7 +43,8 @@ class Trainer:
             losses = torch.zeros(ModelConfig.eval_iter, device=device)
             for k in range(ModelConfig.eval_iter):
                 x, y = BatchGenerator(self.train_data,self.val_data).get_batch(split)
-                x, y = x.to(device), y.to(device)
+                # Ensure input tensors are in long format
+                x, y = x.long().to(device), y.long().to(device)
                 logits, loss = self.model(x, y)
                 losses[k] = loss.item()
             out[split] = losses.mean()
@@ -83,21 +92,8 @@ class Trainer:
         self.epoch_train_losses.append(torch.tensor(self.epoch_train_losses).mean().item())
         self.epoch_val_losses.append(torch.tensor(self.epoch_val_losses).mean().item())
     
-    def plot_losses(self):
-        plt.figure(figsize=(10, 6))
-        train_losses = np.array(self.train_losses)
-        val_losses = np.array(self.val_losses)
-        plt.plot(train_losses, label='Training Loss')
-        plt.plot(val_losses, label='Validation Loss')
-        plt.xlabel('Evaluation Steps')
-        plt.ylabel('Loss')
-        plt.title('Training and Validation Losses')
-        plt.legend()
-        plt.savefig('training_plot.png')
-        plt.close()
 
 def main():
-    
     
     
     # Load and preprocess data
@@ -129,30 +125,7 @@ def main():
                 weight_decay=0.1,
             )
     
-    # Save model parameters info
-    with open('parameters.txt', 'w') as f:
-        f.write(f"Word Tokenized model parameters: {sum(p.numel() for p in model.parameters())/1e6}M parameters")
-        
-    #i wnat to save proper reporrt like what are the configuration , which tokenizer is used, what is the vocab size, what is the model architecture, what is the learning rate, what is the batch size, what is the block size, what is the max_iters, what is the eval_interval, what is the eval_iter, what is the n_epochs, what is the device, what is the dropout, what is the n_head, what is the n_layer, what is the n_embed
-    with open('parameters.txt', 'a') as f:
-        f.write(f"\n\nConfiguration: \n{ModelConfig}\n")
-        f.write(f"\nTokenizer: Word Tokenization\n")
-        f.write(f"\nVocab Size: {vocab_size}\n")
-        f.write(f"\nModel Architecture: {model}\n")
-        f.write(f"\nLearning Rate: {ModelConfig.learning_rate}\n")
-        f.write(f"\nBatch Size: {ModelConfig.batch_size}\n")
-        f.write(f"\nBlock Size: {ModelConfig.block_size}\n")
-        f.write(f"\nMax Iters: {ModelConfig.max_iters}\n")
-        f.write(f"\nEval Interval: {ModelConfig.eval_interval}\n")
-        f.write(f"\nEval Iter: {ModelConfig.eval_iter}\n")
-        f.write(f"\nN Epochs: {ModelConfig.n_epochs}\n")
-        f.write(f"\nDevice: {ModelConfig.device}\n")
-        f.write(f"\nDropout: {ModelConfig.dropout}\n")
-        f.write(f"\nN Head: {ModelConfig.n_head}\n")
-        f.write(f"\nN Layer: {ModelConfig.n_layer}\n")
-        f.write(f"\nN Embed: {ModelConfig.n_embed}\n")
-        
-    
+    save_model_parameters(model,vocab_size,"Sentence Piece Tokenization")
     
     # Initialize trainer
     trainer = Trainer(model, optimizer, tokenizer, train_data, val_data)
@@ -163,7 +136,9 @@ def main():
     
     # Save model and plot losses
     torch.save(model.state_dict(), 'weights/WordTokenizedModel.pth')
-    trainer.plot_losses()
-
+    vis=Visualizer("plots/O(N)_Lineformer")
+    vis.plot_training_metrics(trainer.train_losses, trainer.val_losses)
+    vis.plot_learning_curve(trainer.epoch_train_losses, trainer.epoch_val_losses)
+    
 if __name__ == "__main__":
     main()
