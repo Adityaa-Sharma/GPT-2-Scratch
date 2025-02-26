@@ -122,7 +122,12 @@ def main():
     
     # Initialize model and optimizer
     model = GptModel(vocab_size).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=ModelConfig.learning_rate)
+    optimizer = torch.optim.AdamW(
+    model.parameters(),
+                lr=ModelConfig.learning_rate,
+                betas=(0.9, 0.95),
+                weight_decay=0.1,
+            )
     
     # Save model parameters info
     with open('parameters.txt', 'w') as f:
