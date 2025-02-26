@@ -45,18 +45,43 @@ class Trainer:
     def train_epoch(self, epoch):
         iters_per_epoch = ModelConfig.max_iters // ModelConfig.n_epochs
         for iter in range(iters_per_epoch):
+            # Zero gradients
+            self.optimizer.zero_grad()
+            
+            # Get batch and compute loss
+            xb, yb = BatchGenerator(self.train_data, self.val_data).get_batch('train')
+            logits, loss = self.model(xb, yb)
+            
+            # Backward pass
+            loss.backward()
+            
+            # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            
+            # Optimizer step
+            self.optimizer.step()
+            self.scheduler.step()
+            
+            # Logging
             if iter % ModelConfig.eval_interval == 0:
-        
                 losses = self.estimate_loss()
-                print(f'Epoch {epoch}, Iter {iter}, Train loss: {losses["train"]:.4f}, Val loss: {losses["val"]:.4f}')
+                print(f'Epoch {epoch}, Iter {iter}, '
+                      f'Train loss: {losses["train"]:.4f}, '
+                      f'Val loss: {losses["val"]:.4f}, '
+                      f'LR: {self.scheduler.get_last_lr()[0]:.2e}')
                 self.train_losses.append(losses["train"])
                 self.val_losses.append(losses["val"])
+                self.epoch_train_losses.append(losses["train"])
+                self.epoch_val_losses.append(losses["val"])
             
             xb, yb = BatchGenerator(self.train_data,self.val_data).get_batch('train')
+            # Ensure input tensors are in long format
+            xb, yb = xb.long().to(device), yb.long().to(device)
             logits, loss = self.model(xb, yb)
-            self.optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            self.optimizer.step()
+        
+        # Store average losses for this epoch
+        self.epoch_train_losses.append(torch.tensor(self.epoch_train_losses).mean().item())
+        self.epoch_val_losses.append(torch.tensor(self.epoch_val_losses).mean().item())
     
     def plot_losses(self):
         plt.figure(figsize=(10, 6))
