@@ -1,5 +1,6 @@
 # Model weights and checkpoints
 /weights/
+/weights/*
 *.pth
 *.pt
 *.bin
@@ -10,13 +11,15 @@
 *.vocab
 tokenizer_model*
 
-# Training data
-train.txt
-dataset/*.txt
-# shoulr not pusb the weights folder
-weights/*
-# Python cache
+# Training data and datasets
+/dataset/
+*.txt
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-"train.txt"   # Ignore this file in future commits
+
+# Training artifacts
+/plots/
+parameters.txt
