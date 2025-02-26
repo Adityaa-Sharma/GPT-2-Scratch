@@ -13,7 +13,8 @@ tokenizer_model*
 # Training data
 train.txt
 dataset/*.txt
-
+# shoulr not pusb the weights folder
+weights/*
 # Python cache
 __pycache__/
 *.py[cod]
